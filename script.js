@@ -223,3 +223,166 @@ updateLightIntensity();
 updateAmbientLight();
 
 gsap.set('.lamp', { display: 'block' });
+
+// --- AI CONFIGURATION & VARIABLES ---
+const videoElement = document.getElementById('webcam');
+let aiInitialized = false;
+
+// Custom Loading Indicator එකක් Console එකේ දාමු බලාගන්න
+console.log("🔮 AI Lamp Sync initialized. Click anywhere to activate Camera + AI!");
+
+// --- 1. AI කැමරාව සහ Models පණ ගැන්වීම ---
+async function startAICamera() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        videoElement.srcObject = stream;
+        
+        console.log("📸 Webcam accessed successfully! Loading AI models...");
+        
+        // Face API Models - CORS Error එකක් එන එක නැවැත්වීමට ලින්ක් එක අප්ඩේට් කර ඇත
+        const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
+        
+        console.log("🧠 Face-API Models Loaded!");
+        initMediaPipe();
+    } catch (err) {
+        console.error("❌ Error starting AI Camera: ", err);
+    }
+}
+
+function initMediaPipe() {
+    // MediaPipe Hands Config
+    const hands = new Hands({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+    });
+    hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.6 });
+    hands.onResults(onHandResults);
+
+    // MediaPipe Face Mesh Config
+    const faceMesh = new FaceMesh({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+    });
+    faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.6 });
+    faceMesh.onResults(onFaceResults);
+
+     
+let lastFrameTime = 0;
+const camera = new Camera(videoElement, {
+    onFrame: async () => {
+        const now = Date.now();
+        
+        if (now - lastFrameTime > 100 && videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
+            lastFrameTime = now;
+            try {
+                await hands.send({ image: videoElement });
+                await faceMesh.send({ image: videoElement });
+                detectMood();
+            } catch(e) { }
+        }
+    },
+    width: 320,   
+    height: 240
+});
+camera.start();
+    console.log("🚀 MediaPipe Hands & Face Mesh Started!");
+}
+
+// --- 2. Feature 1: Gesture Control (Lumos Maxima & Dimmer) ---
+let lastPinchTime = 0;
+function onHandResults(results) {
+    if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) return;
+    
+    const landmarks = results.multiHandLandmarks[0];
+    const thumbTip = landmarks[4];
+    const indexTip = landmarks[8];
+    const indexPip = landmarks[6]; // දබරැඟිල්ලේ මැද සන්ධිය
+    
+    // Pinch (Thumb + Index Tip ළං කිරීම) -> ON/OFF Toggle
+    const distance = Math.hypot(thumbTip.x - indexTip.x, thumbTip.y - indexTip.y);
+    const now = Date.now();
+    
+    if (distance < 0.04 && (now - lastPinchTime > 1500)) { 
+        lastPinchTime = now;
+        console.log("🫰 Pinch Detected! Toggling Lamp...");
+        CORD_TL.restart(); // දැනට තියෙන ලාම්පු ස්විච් ඇනිමේෂන් එක රන් කිරීම
+    }
+
+    // Index Finger විතරක් දික් කරලා උඩ-පහළ කරද්දී -> Brightness Control
+    // දබරැඟිල්ලේ ටිප් එක මැද සන්ධියට වඩා උඩින් තියෙනවා නම් (දික් කරලා නම්)
+    if (indexTip.y < indexPip.y) {
+        // Map Y axis (0.2 to 0.7) to 0-100 brightness intensity
+        let intensityValue = Math.round((0.7 - indexTip.y) * 200); 
+        intensityValue = Math.max(0, Math.min(100, intensityValue)); 
+        
+        LIGHT_INTENSITY_SLIDER.value = intensityValue;
+        STATE.LIGHT_INTENSITY = intensityValue;
+        updateLightIntensity();
+    }
+}
+
+// --- 3. Feature 2: Eye Tracking (Follow Me) ---
+function onFaceResults(results) {
+    if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) return;
+    
+    const landmarks = results.multiFaceLandmarks[0];
+    
+    // ඇස් දෙකේ මැද (Nose bridge/Nose tip) ලෑන්ඩ්මාර්ක් එක ගන්නවා
+    const noseTip = landmarks[1]; 
+    
+    // මූණ දකුණට හරවද්දී (MediaPipe එකේ X 0 ට ළං වෙද්දී) ලයිට් එක දකුණට යන විදිහට සකස් කිරීම
+    const shiftX = (0.5 - noseTip.x) * 300; 
+
+    if (STATE.ON) {
+        gsap.to('.lamp__light', {
+            x: shiftX,
+            duration: 0.3,
+            ease: "power1.out"
+        });
+    }
+}
+
+// --- 4. Feature 3: Mood-Based Auto Lighting ---
+let lastMoodCheck = 0;
+async function detectMood() {
+    const now = Date.now();
+    if (now - lastMoodCheck < 500) return; // හැම තත්පර බාගෙකටම සැරයක් විතරක් චෙක් කරලා performance බලාගැනීම
+    lastMoodCheck = now;
+
+    if (videoElement.paused || videoElement.ended || !window.faceapi) return;
+    
+    const detections = await faceapi.detectSingleFace(videoElement, new faceapi.TinyFaceDetectorOptions()).withFaceExpressions();
+    if (!detections) return;
+    
+    const expressions = detections.expressions;
+    let maxEmotion = Object.keys(expressions).reduce((a, b) => expressions[a] > expressions[b] ? a : b);
+    
+    if (STATE.ON) {
+        let targetHue = 320; // Default: Cute Pinkish
+        
+        if (maxEmotion === 'happy') {
+            targetHue = 50;   // 💛 Happy -> Warm Yellow
+            console.log("😊 Mood: Happy -> Light: Gold Yellow");
+        } else if (maxEmotion === 'sad' || maxEmotion === 'fearful') {
+            targetHue = 210;  // 💙 Sad -> Calming Blue
+            console.log("😢 Mood: Sad -> Light: Calming Blue");
+        } else if (maxEmotion === 'angry') {
+            targetHue = 0;    // ❤️ Angry -> Soft Warm Red
+            console.log("😡 Mood: Angry -> Light: Soft Red");
+        }
+        
+        gsap.to(document.documentElement, {
+            '--shade-hue': targetHue,
+            duration: 1.5
+        });
+    }
+}
+
+// --- 5. Event Listener to Start AI ---
+// Screen එකේ ඕනෑම තැනක පළවෙනි ක්ලික් එක කරපු ගමන් කැමරාව සහ AI පණ ගැන්වේ
+document.body.addEventListener('click', () => {
+    if (!aiInitialized) {
+        aiInitialized = true;
+        startAICamera();
+    }
+}, { once: true });

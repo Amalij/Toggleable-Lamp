@@ -8,7 +8,23 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="settings-panel">
+  <!-- Web Video hidden element for AI Tracking -->
+<!-- Web Video element shown on screen for AI Tracking -->
+<video id="webcam" autoplay playsinline muted class="webcam-preview"></video>
+   <!-- Live AI Status and Instructions Panel -->
+<div class="ai-status-panel">
+    <h4>🔮 AI Lamp Status</h4>
+    <div class="status-item">💡 State: <span id="status-power" class="badge">ON </span></div>
+    <div class="status-item">🎭 Mood: <span id="status-mood" class="badge">Detecting...</span></div>
+    <div class="status-item">🎯 Tracking: <span id="status-tracking" class="badge">Looking around</span></div>
+    <hr style="border-color: rgba(255,255,255,0.1); margin: 10px 0;">
+    <small style="color: #aaa; font-style: italic;">
+        🫰 Pinch index & thumb to Toggle<br>
+        ☝️ Move index finger up/down to Dim<br>
+        👁️ Turn your head to shift the beam
+    </small>
+</div> 
+<div class="settings-panel">
         <h3>Lamp Settings</h3>
         <div class="setting-group">
             <label for="lamp-style">Lamp Style:</label>
@@ -118,6 +134,14 @@
     <script src='https://unpkg.com/gsap@3/dist/Draggable.min.js'></script>
     <script src='https://assets.codepen.io/16327/MorphSVGPlugin3.min.js'></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js'></script>
+    <!-- MediaPipe Hands for Gesture Control -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <!-- MediaPipe Face Mesh for Eye Tracking -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+    <!-- MediaPipe Camera Utils to access webcam easily -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <!-- Face API for Emotion/Mood Recognition -->
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <script src="./script.js"></script>
 </body>
 </html>

@@ -198,6 +198,8 @@ input {
 }
 .lamp__light {
     filter: url(#light-glow);
+    transform-origin: top center; /* Light beams swivels from the lamp opening */
+    transition: transform 0.2s ease-out;
 }
 
 /* NEW: Responsive Improvements */
@@ -273,4 +275,127 @@ input {
 }
 .top__body {
   fill: var(--t-3);
+}
+
+/* Webcam Preview Styling */
+.webcam-preview {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 160px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    z-index: 10;
+    transform: scaleX(-1); /* Mirrors the camera so it feels natural when you move */
+    background: #000;
+}
+
+/* Responsive adjustment for small screens */
+@media (max-width: 768px) {
+    .webcam-preview {
+        width: 120px;
+        height: 90px;
+        top: 10px;
+        left: 10px;
+    }
+}
+
+/* 🔮 Upgraded Cyberpunk Glassmorphism AI Status Panel */
+.ai-status-panel {
+    position: fixed;
+    top: 160px;
+    left: 20px;
+    background: rgba(18, 25, 33, 0.85); /* Semitransparent dark theme */
+    border-radius: 16px;
+    padding: 18px;
+    width: 240px;
+    color: #e2e8f0;
+    z-index: 10;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    
+    /* 🌟 Bright Neon border and Soft Outer Glow to separate from background */
+    border: 2px solid #4CAF50; 
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.3), inset 0 0 10px rgba(76, 175, 80, 0.1);
+    
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: all 0.4s ease;
+}
+
+/* Panel Header Tuning */
+.ai-status-panel h4 { 
+    margin: 0 0 14px 0; 
+    color: #4CAF50; 
+    font-size: 16px; 
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(76, 175, 80, 0.2);
+    padding-bottom: 6px;
+}
+
+/* Status Item Layout */
+.status-item { 
+    font-size: 13px; 
+    margin-bottom: 10px; 
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #cbd5e1;
+}
+
+/* Beautiful Status Badges */
+.badge { 
+    background: rgba(255, 255, 255, 0.07); 
+    padding: 4px 10px; 
+    border-radius: 6px; 
+    font-weight: 600; 
+    font-size: 11px; 
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    letter-spacing: 0.5px;
+}
+
+/* Instructions Styling */
+.ai-status-panel small {
+    display: block;
+    line-height: 1.6;
+    font-size: 12px;
+    color: #94a3b8;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.ai-status-panel h4 { margin: 0 0 10px 0; color: #4CAF50; font-size: 16px; }
+.status-item { font-size: 13px; margin-bottom: 6px; }
+.badge { background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px; }
+
+/* 🌟 CRITICAL: Making Light Beam and Colors Super Vivid */
+:root {
+    /* ලාම්පුවේ ෂේඩ් එකේ පාට තදින් පේන්න Hue එක 100% Saturation කරමු */
+    --t-1: hsl(var(--shade-hue), 100%, 50%) !important;
+    --t-2: hsl(var(--shade-hue), 100%, 35%) !important;
+    --t-3: hsl(var(--shade-hue), 100%, 15%) !important;
+    --opening: hsl(var(--shade-hue), 100%, 60%) !important;
+}
+
+/* ලයිට් බීම් එකේ Opacity එක (තද ගතිය) වැඩි කිරීම */
+#light stop:first-child {
+    stop-color: hsl(var(--shade-hue), 100%, 70%) !important;
+    stop-opacity: 0.65 !important; /* කලින් තිබ්බ 0.2 වෙනුවට 0.65 කරා (Super bright!) */
+}
+#light stop:last-child {
+    stop-color: hsl(var(--shade-hue), 100%, 40%) !important;
+    stop-opacity: 0.05 !important;
+}
+
+/* Eye Tracking වලදී ලයිට් බීම් එක වැනෙන (Swing) වෙන ප්‍රමාණය වැඩි කිරීම */
+.lamp__light {
+    transform-origin: 165px 220px !important; /* SVG එක ඇතුළේ ලාම්පු කට තියෙන නිවැරදිම Point එක */
+    mix-blend-mode: screen; /* මීදුම වගේ ලස්සන ආලෝකයක් එන්න */
 }
